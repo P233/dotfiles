@@ -1,0 +1,14 @@
+[gpg]
+	format = ssh
+[gpg "ssh"]
+	program = /Applications/1Password.app/Contents/MacOS/op-ssh-sign
+[commit]
+	gpgsign = true
+[user]
+	signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPMqPH77/OyLniCyof1PaxAZvNT+uAz8i5nl2OOHhUt6
+	name = Peiwen Lu
+	email = hi@peiwen.lu
+[init]
+	defaultBranch = main
+[push]
+	autoSetupRemote = true

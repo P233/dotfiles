@@ -1,0 +1,22 @@
+# app data / cache (not config)
+lzc-client-desktop/
+karabiner/automatic_backups/
+
+# git: signing key is in gitconfig, no secrets to exclude
+
+# emacs: packages and generated files (managed by straight.el)
+# only hand-written config files are tracked
+emacs/straight/
+emacs/var/
+emacs/etc/
+
+# fish: runtime state
+fish/fish_variables
+
+# fish: all plugin-generated files (managed by fisher, not hand-written)
+# completions/ and conf.d/ are entirely plugin-generated
+fish/completions/
+fish/conf.d/
+# functions/: ignore everything, then whitelist hand-written files
+fish/functions/*
+!fish/functions/u_*.fish
