@@ -5,7 +5,7 @@
 [commit]
 	gpgsign = true
 [user]
-	signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPMqPH77/OyLniCyof1PaxAZvNT+uAz8i5nl2OOHhUt6
+	signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILU/YOba+VsKa73SzyZlWJg3w3cSOu2dMTYreaFQKGh6
 	name = Peiwen Lu
 	email = hi@peiwen.lu
 [init]
