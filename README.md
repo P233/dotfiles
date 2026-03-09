@@ -31,6 +31,39 @@ This prefix is automatically tracked by `.gitignore`.
 Config is at `git/config` (XDG path, replaces `~/.gitconfig`).
 Git reads this location natively since version 1.7.12 — no extra setup needed.
 
+## Karabiner-Elements
+
+Config at `karabiner/karabiner.json`. Includes Dvorak layout remapping for the
+built-in keyboard and an F13 shortcut to toggle Ghostty (via LL Dongle).
+
+### Setup
+
+```sh
+make install
+```
+
+This compiles `scripts/toggle-app.swift` → `~/.local/bin/toggle-app`.
+
+To remove the binary:
+
+```sh
+make clean
+```
+
+### How toggle-app works
+
+`toggle-app <AppName>` — fast app toggle via NSWorkspace API (~10ms):
+
+- App is frontmost → hide it
+- App is running but not frontmost → activate it
+- App is not running → launch it
+
+No Accessibility permissions required.
+
+## Ghostty
+
+Config at `ghostty/config`.
+
 ## Emacs
 
 A minimal config derived from [P233/emacs.d](https://github.com/P233/emacs.d),
