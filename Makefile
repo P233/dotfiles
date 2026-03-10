@@ -1,13 +1,14 @@
 VSCODE_SRC  := $(CURDIR)/vscode
 VSCODE_DEST := $(HOME)/Library/Application Support/Code/User
 
-.PHONY: install install-toggle-app install-vscode install-macos clean
+.PHONY: install install-scripts install-vscode install-macos clean
 
-install: install-toggle-app install-vscode install-macos
+install: install-scripts install-vscode install-macos
 
-install-toggle-app:
+install-scripts:
 	mkdir -p ~/.local/bin
 	swiftc -O -o ~/.local/bin/toggle-app scripts/toggle-app.swift
+	install -m 755 scripts/git-dirty-check.sh ~/.local/bin/git-dirty-check
 
 install-vscode:
 	@if [ ! -d "$(VSCODE_DEST)" ]; then \
@@ -24,3 +25,4 @@ install-macos:
 
 clean:
 	rm -f ~/.local/bin/toggle-app
+	rm -f ~/.local/bin/git-dirty-check
