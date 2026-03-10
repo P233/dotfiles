@@ -50,6 +50,14 @@
 
 (setq project-switch-commands 'project-find-file)
 
+;;; Start server for emacsclient
+(use-package server
+  :straight (:type built-in)
+  :config
+  (setq server-socket-dir (expand-file-name "server" user-emacs-directory))
+  (unless (server-running-p)
+    (server-start)))
+
 ;;; Modules
 (require 'init-ui)
 (require 'init-evil)

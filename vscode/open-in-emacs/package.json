@@ -1,0 +1,20 @@
+{
+  "name": "open-in-emacs",
+  "displayName": "Open in Emacs",
+  "description": "Open the current file in Emacs via emacsclient",
+  "version": "0.2.0",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": [],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "open-in-emacs.open",
+        "title": "Open in Emacs"
+      }
+    ]
+  }
+}

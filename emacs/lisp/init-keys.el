@@ -1,5 +1,14 @@
 ;; -*- lexical-binding: t; -*-
 
+(defun my/open-in-vscode ()
+  "Open the current file in VSCode at the current line."
+  (interactive)
+  (let ((file (buffer-file-name))
+        (line (line-number-at-pos)))
+    (if file
+        (start-process "vscode" nil "code" "--goto" (format "%s:%d" file line))
+      (message "Buffer is not visiting a file"))))
+
 (use-package general
   :config
   (general-evil-setup)
@@ -17,7 +26,10 @@
    "<f2>" 'counsel-git         ; find file in git repo
 
    ;; File tree
-   "<f3>" 'treemacs-select-window)
+   "<f3>" 'treemacs-select-window
+
+   ;; Open current file in VSCode at current line
+   "C-<f12>" 'my/open-in-vscode)
 
   ;; SPC leader (normal + visual + emacs states)
   (general-create-definer my/leader-keys

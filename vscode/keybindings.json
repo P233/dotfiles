@@ -1,0 +1,107 @@
+// Place your key bindings in this file to override the defaults
+[
+  {
+    "key": "shift+cmd+p",
+    "command": "-workbench.action.showCommands"
+  },
+  {
+    "key": "shift+cmd+p",
+    "command": "clipboard-manager.editor.pickAndPaste",
+    "when": "textInputFocus && !editorReadonly"
+  },
+  {
+    "key": "shift+cmd+c",
+    "command": "-clipboard-manager.editor.copyToHistory",
+    "when": "textInputFocus && !editorReadonly"
+  },
+  {
+    "key": "shift+cmd+v",
+    "command": "-clipboard-manager.editor.pickAndPaste",
+    "when": "textInputFocus && !editorReadonly"
+  },
+  {
+    "key": "f6",
+    "command": "workbench.action.focusSideBar",
+    "when": "editorTextFocus || editorFocus"
+  },
+  {
+    "key": "f6",
+    "command": "workbench.action.focusActiveEditorGroup",
+    "when": "sideBarFocus"
+  },
+  {
+    "key": "f6",
+    "command": "workbench.action.focusActiveEditorGroup",
+    "when": "panelFocus"
+  },
+  {
+    "key": "ctrl+f1",
+    "command": "workbench.view.explorer"
+  },
+  {
+    "key": "ctrl+f2",
+    "command": "workbench.view.scm"
+  },
+  {
+    "key": "ctrl+f3",
+    "command": "git.openChange"
+  },
+  {
+    "key": "ctrl+f4",
+    "command": "workbench.action.findInFiles"
+  },
+  {
+    "key": "ctrl+f12",
+    "command": "open-in-emacs.open"
+  },
+  {
+    "key": "tab",
+    "command": "-editor.action.inlineSuggest.commit",
+    "when": "inlineEditIsVisible && tabShouldAcceptInlineEdit && !editorHoverFocused && !editorTabMovesFocus && !suggestWidgetVisible || inlineEditIsVisible && inlineSuggestionVisible && tabShouldAcceptInlineEdit && !editorHoverFocused && !editorTabMovesFocus && !suggestWidgetVisible || inlineSuggestionHasIndentationLessThanTabSize && inlineSuggestionVisible && !editor.hasSelection && !editorHoverFocused && !editorTabMovesFocus && !suggestWidgetVisible || inlineEditIsVisible && inlineSuggestionHasIndentationLessThanTabSize && inlineSuggestionVisible && !editor.hasSelection && !editorHoverFocused && !editorTabMovesFocus && !suggestWidgetVisible"
+  },
+  {
+    "key": "tab",
+    "command": "editor.action.inlineSuggest.commit",
+    "when": "inlineEditIsVisible && tabShouldAcceptInlineEdit && !editorHoverFocused && !editorTabMovesFocus && !suggestWidgetVisible || inlineEditIsVisible && inlineSuggestionVisible && tabShouldAcceptInlineEdit && !editorHoverFocused && !editorTabMovesFocus && !suggestWidgetVisible || inlineSuggestionHasIndentationLessThanTabSize && inlineSuggestionVisible && !editor.hasSelection && !editorHoverFocused && !editorTabMovesFocus && !suggestWidgetVisible || inlineEditIsVisible && inlineSuggestionHasIndentationLessThanTabSize && inlineSuggestionVisible && !editor.hasSelection && !editorHoverFocused && !editorTabMovesFocus && !suggestWidgetVisible && vim.mode == 'Normal'"
+  },
+  {
+    "key": "cmd+s",
+    "command": "runCommands",
+    "when": "editorTextFocus && vim.mode == 'Insert'",
+    "args": {
+      "commands": [
+        "extension.vim_escape",
+        "workbench.action.files.save"
+      ]
+    }
+  },
+  {
+    "key": "cmd+s",
+    "command": "workbench.action.files.save",
+    "when": "editorTextFocus && vim.mode != 'Insert'"
+  },
+  {
+    "key": "cmd+b",
+    "command": "cursorWordLeft",
+    "when": "editorTextFocus && vim.mode == 'Insert'"
+  },
+  {
+    "key": "cmd+f",
+    "command": "-actions.find",
+    "when": "editorFocus || editorIsOpen"
+  },
+  {
+    "key": "cmd+f",
+    "command": "cursorWordRight",
+    "when": "editorTextFocus && vim.mode == 'Insert'"
+  },
+  {
+    "key": "cmd+d",
+    "command": "editor.action.addSelectionToNextFindMatch",
+    "when": "editorFocus"
+  },
+  {
+    "key": "cmd+b",
+    "command": "-workbench.action.toggleSidebarVisibility"
+  }
+]

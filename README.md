@@ -2,6 +2,21 @@
 
 Personal dotfiles managed with git.
 
+## Setup
+
+Prerequisites: Xcode CLI tools, Node.js, VSCode with `code` CLI.
+
+```sh
+git clone <repo> ~/.config
+make install    # symlink VSCode configs, install open-in-emacs extension, compile toggle-app
+```
+
+To remove the toggle-app binary:
+
+```sh
+make clean
+```
+
 ## Fish Shell
 
 Plugins are managed by [fisher](https://github.com/jorgebucaran/fisher).
@@ -36,21 +51,7 @@ Git reads this location natively since version 1.7.12 — no extra setup needed.
 Config at `karabiner/karabiner.json`. Includes Dvorak layout remapping for the
 built-in keyboard and an F13 shortcut to toggle Ghostty (via LL Dongle).
 
-### Setup
-
-```sh
-make install
-```
-
-This compiles `scripts/toggle-app.swift` → `~/.local/bin/toggle-app`.
-
-To remove the binary:
-
-```sh
-make clean
-```
-
-### How toggle-app works
+### toggle-app
 
 `toggle-app <AppName>` — fast app toggle via NSWorkspace API (~10ms):
 
@@ -64,10 +65,24 @@ No Accessibility permissions required.
 
 Config at `ghostty/config`.
 
+## VSCode
+
+Config files are symlinked from `vscode/` into `~/Library/Application Support/Code/User/`.
+
+| File | Purpose |
+|------|---------|
+| `vscode/settings.json` | Editor settings |
+| `vscode/keybindings.json` | Custom keybindings |
+| `vscode/open-in-emacs/` | Custom extension: open current file in Emacs |
+
+`Ctrl+F12` opens the current file in Emacs at the current line via `emacsclient`.
+If Emacs is not running, it launches Emacs.app automatically.
+
 ## Emacs
 
 A minimal config derived from [P233/emacs.d](https://github.com/P233/emacs.d),
-trimmed down for code reading and git (Magit) use only.
+trimmed down for code reading and git (Magit) use only. Emacs server is started
+automatically on launch to support `emacsclient` connections from VSCode.
 
 Packages are managed by [straight.el](https://github.com/radian-software/straight.el).
 To restore on a new machine, just open Emacs — straight.el will bootstrap itself and install all packages automatically.
@@ -82,3 +97,4 @@ To restore on a new machine, just open Emacs — straight.el will bootstrap itse
 | `emacs/straight/` | no | Packages installed by straight.el |
 | `emacs/var/` | no | Runtime data (no-littering) |
 | `emacs/etc/` | no | Generated config (no-littering) |
+| `emacs/server/` | no | Server socket for emacsclient |

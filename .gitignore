@@ -10,6 +10,12 @@ emacs/straight/
 emacs/var/
 emacs/etc/
 
+# emacs: server socket (runtime)
+emacs/server/
+
+# vscode: build artifacts
+vscode/open-in-emacs/*.vsix
+
 # fish: runtime state
 fish/fish_variables
 
