@@ -23,6 +23,7 @@ fish/fish_variables
 # completions/ and conf.d/ are entirely plugin-generated
 fish/completions/
 fish/conf.d/
+fish/themes/
 # functions/: ignore everything, then whitelist hand-written files
 fish/functions/*
 !fish/functions/u_*.fish
