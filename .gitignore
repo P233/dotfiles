@@ -1,4 +1,5 @@
 # app data / cache (not config)
+configstore/
 lzc-client-desktop/
 karabiner/automatic_backups/
 
@@ -26,4 +27,4 @@ fish/conf.d/
 fish/themes/
 # functions/: ignore everything, then whitelist hand-written files
 fish/functions/*
-!fish/functions/u_*.fish
+!fish/functions/p.fish
