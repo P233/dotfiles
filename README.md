@@ -4,11 +4,13 @@ Personal dotfiles managed with git.
 
 ## Setup
 
-Prerequisites: macOS, Xcode CLI tools, Git, Node.js and Fish.
+Prerequisites: macOS, Xcode CLI tools, Git, Node.js, Fish and uv.
+Ghostty uses the separately installed
+PragmataPro Mono Liga font; its licensed font files are not in this repository.
 
 ```sh
 git clone <repo> ~/.config
-make install    # restore scripts and pnpm; apply macOS defaults
+make install    # restore scripts, pnpm and Ghostty fonts; apply macOS defaults
 ```
 
 Individual targets allow restoring one tool at a time:
@@ -17,6 +19,7 @@ Individual targets allow restoring one tool at a time:
 | --- | --- |
 | `make install-scripts` | Install Git check and SSH signing adapter |
 | `make install-pnpm` | Restore pnpm and pnpx in a stable user directory without Corepack |
+| `make install-ghostty` | Generate/install the four-symbol font for solid tmux arrow indicators |
 | `make install-macos` | Apply the recorded preferences and restart Dock |
 | `make check` | Run focused script and configuration checks |
 
@@ -88,6 +91,16 @@ built-in keyboard, where Cmd+F11 sends F13 for Ghostty's global show/hide shortc
 ## Ghostty
 
 Config at `ghostty/config`.
+
+`make install-ghostty` creates `~/Library/Fonts/TmuxSolidTriangles.ttf` with
+FontTools (the build dependency is pinned in `Makefile` and managed by uv).
+The font contains four independently generated geometric triangles with
+PragmataPro-compatible cell metrics; it contains no licensed PragmataPro outlines.
+Ghostty maps only `U+2190` through `U+2193` to this font, so native tmux arrows
+appear as `◀ ▲ ▶ ▼`. Every occurrence of these four codepoints in Ghostty uses
+the same mapping; copied text retains its original arrow character. Other text
+uses the original font. Reload the config and open a new terminal surface, or
+quit/reopen Ghostty, to apply this font mapping; existing tmux sessions persist.
 
 ## Other active tools
 

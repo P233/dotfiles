@@ -1,6 +1,8 @@
 theme = Dracula
 font-family = PragmataPro Mono Liga
 font-size = 16
+# Keep tmux's native arrow directions, rendered as one-cell solid triangles.
+font-codepoint-map = U+2190-U+2193=Tmux Solid Triangles
 
 # Show or hide existing Ghostty windows from any app.
 keybind = global:f13=toggle_visibility
