@@ -15,7 +15,7 @@ Individual targets allow restoring one tool at a time:
 
 | Target | Effect |
 | --- | --- |
-| `make install-scripts` | Install Git check and SSH signing adapter; compile toggle-app |
+| `make install-scripts` | Install Git check and SSH signing adapter |
 | `make install-pnpm` | Restore pnpm and pnpx in a stable user directory without Corepack |
 | `make install-macos` | Apply the recorded preferences and restart Dock |
 | `make check` | Run focused script and configuration checks |
@@ -24,7 +24,7 @@ The pnpm version is pinned in `Makefile`. pnpm respects
 project package-manager versions through its native version switching. CLI
 downloads and generated packages live outside the configuration source.
 
-To remove the Git check and toggle-app binaries (the signing adapter is retained):
+To remove the Git check binary (the signing adapter is retained):
 
 ```sh
 make clean
@@ -73,20 +73,17 @@ files and unpushed commits. It supports worktrees, outputs Alfred Script Filter
 JSON, and reports Git errors or a configured upstream whose branch is missing
 instead of treating them as clean.
 
+## macOS
+
+`macos/defaults.sh` records the selected window and Dock preferences.
+Run `make install-macos` to apply them and restart the Dock.
+See the [animation inventory](macos/README.md) for the recorded local state,
+independent controls, and macOS version limitations. Reduce Motion stays off.
+
 ## Karabiner-Elements
 
 Config at `karabiner/karabiner.json`. Includes Dvorak layout remapping for the
-built-in keyboard and an F13 shortcut to toggle Ghostty (via LL Dongle).
-
-### toggle-app
-
-`toggle-app <AppName>` — fast app toggle via NSWorkspace API (~10ms):
-
-- App is frontmost → hide it
-- App is running but not frontmost → activate it
-- App is not running → launch it
-
-No Accessibility permissions required.
+built-in keyboard, where Cmd+F11 sends F13 for Ghostty's global show/hide shortcut.
 
 ## Ghostty
 

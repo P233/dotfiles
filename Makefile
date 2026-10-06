@@ -6,7 +6,6 @@ install: install-scripts install-pnpm install-macos
 
 install-scripts:
 	mkdir -p "$(HOME)/.local/bin"
-	swiftc -O -o "$(HOME)/.local/bin/toggle-app" scripts/toggle-app.swift
 	install -m 755 scripts/git-dirty-check.py "$(HOME)/.local/bin/git-dirty-check"
 	install -m 755 scripts/agent-ssh-sign.sh "$(HOME)/.local/bin/agent-ssh-sign"
 
@@ -29,5 +28,4 @@ check:
 	fish --no-config --no-execute fish/config.fish
 
 clean:
-	rm -f "$(HOME)/.local/bin/toggle-app"
 	rm -f "$(HOME)/.local/bin/git-dirty-check"
