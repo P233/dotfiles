@@ -4,14 +4,21 @@ Personal dotfiles managed with git.
 
 ## Setup
 
-Prerequisites: Xcode CLI tools, Node.js, VSCode with `code` CLI.
+Prerequisites: macOS, Xcode CLI tools, Git, Node.js and Fish.
 
 ```sh
 git clone <repo> ~/.config
-make install    # symlink VSCode configs, install open-in-emacs extension, compile toggle-app
+make install    # restore scripts; apply macOS defaults
 ```
 
-To remove the toggle-app binary:
+Individual targets allow restoring one tool at a time:
+
+| Target | Effect |
+| --- | --- |
+| `make install-scripts` | Install Git check and compile toggle-app |
+| `make install-macos` | Apply the recorded preferences and restart Dock |
+
+To remove the Git check and toggle-app binaries:
 
 ```sh
 make clean
@@ -65,36 +72,18 @@ No Accessibility permissions required.
 
 Config at `ghostty/config`.
 
-## VSCode
+## Other active tools
 
-Config files are symlinked from `vscode/` into `~/Library/Application Support/Code/User/`.
+- Docker's `docker agent` still owns `cagent/`; its machine identity is ignored.
+  Alma, Hunk, 1Password CLI and uv also remain installed; their runtime state
+  is not configuration source.
 
-| File | Purpose |
-|------|---------|
-| `vscode/settings.json` | Editor settings |
-| `vscode/keybindings.json` | Custom keybindings |
-| `vscode/open-in-emacs/` | Custom extension: open current file in Emacs |
+## Repository boundaries
 
-`Ctrl+F12` opens the current file in Emacs at the current line via `emacsclient`.
-If Emacs is not running, it launches Emacs.app automatically.
-
-## Emacs
-
-A minimal config derived from [P233/emacs.d](https://github.com/P233/emacs.d),
-trimmed down for code reading and git (Magit) use only. Emacs server is started
-automatically on launch to support `emacsclient` connections from VSCode.
-
-Packages are managed by [straight.el](https://github.com/radian-software/straight.el).
-To restore on a new machine, just open Emacs — straight.el will bootstrap itself and install all packages automatically.
-
-### File conventions
-
-| Path | Tracked | Notes |
-|------|---------|-------|
-| `emacs/early-init.el` | yes | Startup optimizations |
-| `emacs/init.el` | yes | Bootstrap + core settings |
-| `emacs/lisp/*.el` | yes | Hand-written modules |
-| `emacs/straight/` | no | Packages installed by straight.el |
-| `emacs/var/` | no | Runtime data (no-littering) |
-| `emacs/etc/` | no | Generated config (no-littering) |
-| `emacs/server/` | no | Server socket for emacsclient |
+Credentials, account databases, Fish plugin output, Hunk update state, Python
+bytecode, Serena local state and `work/` experiments are ignored.
+Keep experimental evidence and private machine state out
+of configuration commits. This repository does not contain Emacs's configuration,
+which is maintained separately at `~/.emacs.d`. VS Code settings and extensions
+are also maintained outside this repository; its native settings are regular
+local files rather than links into this repository.

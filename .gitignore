@@ -1,24 +1,35 @@
+# credentials and machine-specific account state
+/context7/credentials.json
+/github-copilot/apps.json
+/github-copilot/auth.db
+/github-copilot/auth.db-*
+/gh/hosts.yml
+/op/config
+/cagent/user-uuid
+
+# locally managed app configuration
+/zed/
+/cmux/
+
+# generated app data and runtime state
+/alma/api-spec.md
+/alma/cron/
+/alma/skills/.bundled-skills-migrated
+/cagent/.cagent_first_run
+/uv/uv-receipt.json
+/hunk/state.json
+/.serena/
+/work/
+__pycache__/
+*.py[cod]
+
 # app data / cache (not config)
 configstore/
 lzc-client-desktop/
 karabiner/automatic_backups/
 
-# git: signing key is in gitconfig, no secrets to exclude
-
-# emacs: packages and generated files (managed by straight.el)
-# only hand-written config files are tracked
-emacs/straight/
-emacs/var/
-emacs/etc/
-
-# emacs: server socket (runtime)
-emacs/server/
-
-# vscode: build artifacts
-vscode/open-in-emacs/*.vsix
-
 # fish: runtime state
-fish/fish_variables
+fish/fish_variables*
 
 # fish: all plugin-generated files (managed by fisher, not hand-written)
 # completions/ and conf.d/ are entirely plugin-generated
