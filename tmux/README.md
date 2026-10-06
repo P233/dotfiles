@@ -3,13 +3,48 @@
 `~/.tmux.conf` retains the existing OpenRig block and sources this directory's
 `tmux.conf`; no tmux plugins are required. Restore this setup with
 `make install-tmux` from the repository root. The installer preserves existing
-root settings. It does not restart or reload a live server.
+root settings, installs only missing dependencies and verifies the pinned
+CodexBar CLI archive checksum. It also configures the silent Claude
+native usage collector when no custom Claude status line is present. It does not
+restart or reload a live server.
 
 One status row sits at the top on a slightly lighter Dracula background
-(`#343746`), without Powerline separators. The clickable window list (tabs) sits
-on the left. Each tab shows `[number:name]`, with a name that normally follows
-its running command. Purple text and a selection background highlight the
-current tab without changing its width. The session name and clock are hidden.
+(`#343746`), without Powerline separators or battery information. The clickable
+window list (tabs) sits on the left; CPU, RAM and quota bars sit on the right.
+Each tab shows `[number:name]`, with a name that normally follows its running
+command. Both active and inactive tabs keep their brackets; purple text and a
+selection background highlight the current tab without changing its width. The
+session name is hidden. CPU and RAM are hidden below 120 columns to leave room
+for tabs and quotas. Tabs, status widgets, labels and bars use one-space
+separators; blank cells inside a quota bar represent its fixed-width unfilled
+area. CPU and RAM are separated by ` · `. The clock is hidden.
+
+Codex uses blue (`#74aaff`); Claude uses Anthropic's official orange (`#d97757`).
+Twelve-cell bars mean **remaining quota**, so a longer colored fill means more
+quota available. Percentages sit inside each bar at the left, with one cell of
+padding. Percentage text stays regular white across both the brand-colored fill and
+the muted unfilled track. A terminal cannot specify half-cell padding, reduce
+just the percentage font size, or change the text row's pixel
+height. Codex shows one bar, preferring 5h when present and falling back to 7d.
+Claude's two bars appear inline, 5h then 7d, separated by spaces without duration
+labels. The percentage is left-aligned; the reset countdown is right-aligned
+inside the same bar, with one cell of padding at each outer edge. Both fields
+stay regular white. The entire twelve-cell width determines the colored fill
+and stays fixed when countdown units change. Countdowns contain plain time text,
+such as `35m`, `2h` or `3d`, without an icon.
+PragmataPro Mono Liga supplies the native one-cell Nerd refresh/reset glyph
+`U+F021`, verified against the installed
+font and the [designer's symbol list](https://github.com/fabrizioschiavi/pragmatapro-semiotics/blob/main/Symbols.csv).
+System metrics and agents use the plain ASCII separator ` | `; Claude's two bars
+use one space. Countdowns derive from the cached deadline without fetching again,
+using one unit, with minutes rounded up and hours/days shown without smaller units.
+Both values reuse the same sanitized quota cache and refresh lock.
+
+`scripts/cpu.sh` reports the summed process CPU share divided by logical cores.
+`scripts/ram.sh` reports used physical RAM as total minus free pages and reclaimable
+file-backed (including speculative) and purgeable pages. This is close to
+Activity Monitor's Memory Used percentage; sampling times can differ. It is not
+the separate memory-pressure metric.
 
 ## Ghostty and panes
 
@@ -67,13 +102,108 @@ negotiate the keyboard protocol again.
 Reload Ghostty with Cmd+Shift+, for the new keybindings. The startup command takes
 effect for newly created terminal surfaces.
 
+## Usage data
+
+CodexBar CLI 0.72.0 for macOS arm64 is installed at `~/.local/bin/codexbar`, linked
+to `~/.local/share/codexbar/v0.72.0/CodexBarCLI`. Its release archive was verified
+against the GitHub release SHA256. The menu bar app is not required.
+
+Codex uses CodexBar's explicit OAuth source and is queried at most once every
+180 seconds, including while a window is used up. Claude makes **no automatic
+query**: its native `statusLine` command passes `rate_limits.five_hour` and
+`rate_limits.seven_day` to `usage.py claude --ingest`. The collector reads JSON
+from stdin, saves only quota fields and prints nothing, so it adds no status row
+inside Claude. Data arrives after Claude's API responses; typing or repainting
+can repeat already-known values, and each session reports its own last response,
+so snapshots from several sessions arrive out of order. Each window keeps the
+newer measurement: a later reset deadline starts a new period, and within one
+period usage only grows, so a snapshot with more remaining quota is older and is
+ignored. Deadlines within an hour count as one period, because manual results
+read rounded reset times from the CLI; without a deadline, arrival order
+decides. Repeated snapshots therefore change nothing, and a manual result is
+replaced only by newer native data. This is subscription quota, separate from
+API billing.
+See the [official status-line data contract](https://code.claude.com/docs/en/statusline).
+
+`make install-tmux` adds this command to `~/.claude/settings.json` (or
+`$CLAUDE_CONFIG_DIR/settings.json`), preserves all other settings and keeps one
+private original backup at `settings.json.before-tmux-usage`. Re-running it is
+idempotent. It preserves a different existing custom status line: in that case,
+integrate the collector into that command yourself rather than replacing it.
+The command is:
+
+```sh
+/usr/bin/python3 "$HOME/.config/tmux/scripts/usage.py" claude --ingest
+```
+
+Claude Code must supply the native fields: they are available for Pro/Max after
+the first API response in a trusted workspace. If an existing Claude session does
+not pick up the settings change, restart/resume that session when convenient.
+Idle sessions and usage on other devices may leave the last received snapshot
+unchanged; use manual refresh to check independently. A window that a native
+snapshot omits or that loses to a newer cached value keeps its value and its own
+measurement time, so its `~` marker stays accurate.
+
+A manual refresh queries Claude through CodexBar's native CLI `/usage` probe,
+reusing the existing sign-in in a temporary directory without submitting a
+coding task or scraping browser cookies.
+
+A Codex query also returns the remaining credit balance (extra usage beyond the
+plan's rate limits). It appears after the Codex bar in compact form, such as
+`850`, `62.1k` or `1.2M`, and is hidden when the balance is zero, unavailable or
+expired with the bar's measurement. Codex keeps polling while a window is used
+up, so the balance stays current while credits are being spent.
+
+Queries have a 25-second timeout that also terminates probe child processes.
+Only sanitized windows, timestamps, the Codex credit balance and the last
+failure's exception name are stored in
+`~/.cache/tmux-usage/` (or `$XDG_CACHE_HOME/tmux-usage/`). Each provider has a
+query lock and a separate short cache-write lock. A native callback can therefore
+publish during a query; each queried window is merged by its measurement time,
+preserving newer native values while updating older windows from the same query.
+There is no persistent updater daemon. With no attached status bar, automatic
+queries wait until a client attaches; with an active bar, eligibility is checked
+every 5 seconds.
+
+- `0%` with a countdown: the window is used up until that reset.
+- `` (`U+F021`) instead of a percentage, with countdown `0m`: the cached reset deadline has
+  passed and a fresh quota window is pending. Codex keeps a known 5h window in
+  this state instead of switching to its weekly quota. Claude stays in this
+  state until its next native update or a manual refresh.
+- `—` instead of a percentage: the window is unavailable or the measurement is
+  expired. Codex measurements expire after 15 minutes. Claude retains its last
+  received snapshot during idle periods. This is distinct from a 0% bar.
+  A countdown of `—` means the reset time is unavailable.
+- `~`: retained data after a failed fetch, or a window last measured more than
+  5 minutes ago. It is the last known
+  quota, not a guarantee of current usage on other devices. Passing a reset
+  deadline never assumes that quota is now 100%.
+- Claude keeps a missing five-hour measurement as `—` in the first position;
+  its weekly percentage stays in the second position.
+
+Press **Ctrl+B, then Ctrl+R** to refresh both Codex and Claude in the background.
+You can hold Ctrl and press B followed by R. Ctrl+R without the tmux prefix
+continues to reach the foreground program. Manual refresh bypasses the Codex
+polling interval and is the only way Claude is queried independently, allowing
+an early reset to be detected; provider query locks still prevent duplicate
+requests. A failed query exits with status 1 and names the provider and
+exception, which Ctrl+B Ctrl+R shows in tmux view mode.
+
+Refresh a provider from a shell:
+
+```sh
+python3 ~/.config/tmux/scripts/usage.py codex --refresh
+python3 ~/.config/tmux/scripts/usage.py claude --refresh
+```
+
 ## Reload
 
 ```sh
 tmux source-file ~/.tmux.conf
 ```
 
-Ghostty's feature entry uses array index 100 so reloading cannot append duplicates.
+The status row calls this repository's scripts directly. Ghostty's feature entry
+uses array index 100 so reloading cannot append duplicates.
 
 Check the tmux scripts with the interpreter they run under:
 

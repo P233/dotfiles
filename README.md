@@ -20,7 +20,7 @@ Individual targets allow restoring one tool at a time:
 | `make install-scripts` | Install Git check and SSH signing adapter |
 | `make install-pnpm` | Restore pnpm and pnpx in a stable user directory without Corepack |
 | `make install-ghostty` | Generate/install the four-symbol font for solid tmux arrow indicators |
-| `make install-tmux` | Source the tmux configuration while preserving existing root settings |
+| `make install-tmux` | Install a missing CodexBar CLI; configure native Claude usage; preserve existing settings |
 | `make install-macos` | Apply the recorded preferences and restart Dock |
 | `make check` | Run focused script and configuration checks |
 
@@ -58,7 +58,7 @@ fisher update
 Add each hand-written function explicitly to the `.gitignore` allowlist.
 PATH entries use `fish_add_path --path`; sourcing the config repeatedly does
 not append duplicate paths or persist new universal variables. `~/.local/bin`
-contains the pnpm CLI entry points; `~/Library/pnpm` contains the
+contains the pnpm and CodexBar CLI entry points; `~/Library/pnpm` contains the
 existing global ACP commands.
 
 ## Git
@@ -92,7 +92,8 @@ built-in keyboard, where Cmd+F11 sends F13 for Ghostty's global show/hide shortc
 ## Ghostty
 
 Config at `ghostty/config`. Ghostty creates or reattaches the persistent tmux
-`main` session. The tmux configuration provides one top status row with native clickable tabs. See [tmux setup and shortcuts](tmux/README.md).
+`main` session. The tmux configuration provides one top status row with tabs
+and cached agent quota bars. See [tmux setup and shortcuts](tmux/README.md).
 Ghostty's pane and tab shortcuts control tmux through dedicated key sequences.
 The default Ctrl+B prefix remains available; see the
 [shortcut list](tmux/shortcuts.md).

@@ -33,7 +33,7 @@ check:
 	/usr/bin/python3 -B -m unittest discover -s scripts/tests -v
 	/usr/bin/python3 -B -m unittest discover -s tmux/tests -v
 	uv run --python '>=3.11' --with fonttools==$(FONTTOOLS_VERSION) python -B -m unittest discover -s ghostty/tests -v
-	shellcheck macos/defaults.sh scripts/agent-ssh-sign.sh tmux/install.sh
+	shellcheck macos/defaults.sh scripts/agent-ssh-sign.sh tmux/install.sh tmux/scripts/*.sh
 	fish --no-config --no-execute fish/config.fish
 
 clean:

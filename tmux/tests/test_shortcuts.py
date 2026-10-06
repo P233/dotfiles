@@ -255,6 +255,26 @@ class ShortcutTerminalTests(unittest.TestCase):
         self.send("%")
         self.wait_for(lambda: len(self.panes()) == 3)
 
+    def test_usage_refresh_requires_prefix_and_dispatches_without_arguments(self):
+        helper = self.home / ".config/tmux/scripts/refresh-usage.sh"
+        helper.parent.mkdir(parents=True)
+        helper.write_text('#!/bin/sh\nprintf "%s\\n" "$#" > "$HOME/usage-refresh"\n')
+        helper.chmod(0o755)
+        ready = self.home / "ready"
+        received = self.home / "received"
+        refresh = self.home / "usage-refresh"
+        code = ("import os,tty,time; from pathlib import Path; tty.setraw(0); "
+                f"Path({str(ready)!r}).touch(); "
+                f"Path({str(received)!r}).write_bytes(os.read(0,1)); time.sleep(5)")
+        self.tmux("respawn-pane", "-k", "-t", self.value("#{pane_id}"),
+                  "/usr/bin/python3 -c " + shlex.quote(code))
+        self.wait_for(ready.exists)
+        self.send("\x12")
+        self.wait_for(lambda: received.exists() and received.read_bytes() == b"\x12")
+        self.assertFalse(refresh.exists())
+        self.send("\x02")
+        self.send("\x12")
+        self.wait_for(lambda: refresh.exists() and refresh.read_text().strip() == "0")
 
 
 if __name__ == "__main__":
