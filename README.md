@@ -15,7 +15,7 @@ Individual targets allow restoring one tool at a time:
 
 | Target | Effect |
 | --- | --- |
-| `make install-scripts` | Install Git check and compile toggle-app |
+| `make install-scripts` | Install Git check and SSH signing adapter; compile toggle-app |
 | `make install-pnpm` | Restore pnpm and pnpx in a stable user directory without Corepack |
 | `make install-macos` | Apply the recorded preferences and restart Dock |
 | `make check` | Run focused script and configuration checks |
@@ -24,7 +24,7 @@ The pnpm version is pinned in `Makefile`. pnpm respects
 project package-manager versions through its native version switching. CLI
 downloads and generated packages live outside the configuration source.
 
-To remove the Git check and toggle-app binaries:
+To remove the Git check and toggle-app binaries (the signing adapter is retained):
 
 ```sh
 make clean
@@ -61,6 +61,17 @@ existing global ACP commands.
 
 Config is at `git/config` (XDG path, replaces `~/.gitconfig`).
 Git reads this location natively since version 1.7.12 — no extra setup needed.
+
+SSH commit signing uses `scripts/agent-ssh-sign.sh`, installed as
+`~/.local/bin/agent-ssh-sign`. It connects to the existing agent socket at
+`~/.local/state/agent-signing/agent.sock`. The agent, private keys and
+`~/.ssh/allowed_signers` are provisioned separately. The 1Password SSH agent
+configuration selects the `Agent SSH` vault; this does not create a signing agent.
+
+`git-dirty-check` scans `~/Projects` and this configuration directory for modified
+files and unpushed commits. It supports worktrees, outputs Alfred Script Filter
+JSON, and reports Git errors or a configured upstream whose branch is missing
+instead of treating them as clean.
 
 ## Karabiner-Elements
 

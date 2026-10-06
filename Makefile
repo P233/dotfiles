@@ -5,9 +5,10 @@ PNPM_VERSION := 12.9.1
 install: install-scripts install-pnpm install-macos
 
 install-scripts:
-	mkdir -p ~/.local/bin
-	swiftc -O -o ~/.local/bin/toggle-app scripts/toggle-app.swift
-	install -m 755 scripts/git-dirty-check.sh ~/.local/bin/git-dirty-check
+	mkdir -p "$(HOME)/.local/bin"
+	swiftc -O -o "$(HOME)/.local/bin/toggle-app" scripts/toggle-app.swift
+	install -m 755 scripts/git-dirty-check.py "$(HOME)/.local/bin/git-dirty-check"
+	install -m 755 scripts/agent-ssh-sign.sh "$(HOME)/.local/bin/agent-ssh-sign"
 
 # Independent of Homebrew's versioned Node Cellar and its optional Corepack.
 install-pnpm:
@@ -23,9 +24,10 @@ install-macos:
 
 # The scripts run under the system interpreter, so their tests do too.
 check:
-	shellcheck macos/defaults.sh
+	/usr/bin/python3 -B -m unittest discover -s scripts/tests -v
+	shellcheck macos/defaults.sh scripts/agent-ssh-sign.sh
 	fish --no-config --no-execute fish/config.fish
 
 clean:
-	rm -f ~/.local/bin/toggle-app
-	rm -f ~/.local/bin/git-dirty-check
+	rm -f "$(HOME)/.local/bin/toggle-app"
+	rm -f "$(HOME)/.local/bin/git-dirty-check"
