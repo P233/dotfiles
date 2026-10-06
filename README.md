@@ -8,7 +8,7 @@ Prerequisites: macOS, Xcode CLI tools, Git, Node.js and Fish.
 
 ```sh
 git clone <repo> ~/.config
-make install    # restore scripts; apply macOS defaults
+make install    # restore scripts and pnpm; apply macOS defaults
 ```
 
 Individual targets allow restoring one tool at a time:
@@ -16,7 +16,13 @@ Individual targets allow restoring one tool at a time:
 | Target | Effect |
 | --- | --- |
 | `make install-scripts` | Install Git check and compile toggle-app |
+| `make install-pnpm` | Restore pnpm and pnpx in a stable user directory without Corepack |
 | `make install-macos` | Apply the recorded preferences and restart Dock |
+| `make check` | Run focused script and configuration checks |
+
+The pnpm version is pinned in `Makefile`. pnpm respects
+project package-manager versions through its native version switching. CLI
+downloads and generated packages live outside the configuration source.
 
 To remove the Git check and toggle-app binaries:
 
@@ -40,13 +46,16 @@ fisher update
 | `fish/config.fish` | yes | Main config |
 | `fish/fish_plugins` | yes | Fisher plugin list |
 | `fish/fish_variables` | no | Runtime state, machine-specific |
-| `fish/functions/u_*.fish` | yes | **Hand-written functions (use `u_` prefix)** |
+| `fish/functions/p.fish` | yes | Hand-written pnpm shorthand |
 | `fish/functions/*` (others) | no | Plugin-generated |
 | `fish/completions/` | no | Plugin-generated |
 | `fish/conf.d/` | no | Plugin-generated |
 
-**Rule:** all hand-written fish functions must be named `u_<name>.fish`.
-This prefix is automatically tracked by `.gitignore`.
+Add each hand-written function explicitly to the `.gitignore` allowlist.
+PATH entries use `fish_add_path --path`; sourcing the config repeatedly does
+not append duplicate paths or persist new universal variables. `~/.local/bin`
+contains the pnpm CLI entry points; `~/Library/pnpm` contains the
+existing global ACP commands.
 
 ## Git
 
