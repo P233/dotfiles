@@ -4,5 +4,65 @@ font-size = 16
 # Keep tmux's native arrow directions, rendered as one-cell solid triangles.
 font-codepoint-map = U+2190-U+2193=Tmux Solid Triangles
 
+# Create or reattach the persistent tmux session for every terminal surface.
+command = direct:/opt/homebrew/bin/tmux new-session -A -s main
+# A tmux server started here inherits this PATH; its run-shell jobs invoke `tmux` by name.
+env = PATH=/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin:/Applications/Ghostty.app/Contents/MacOS
+
+# Use square corners without window decorations (also disables native tabs).
+window-decoration = none
+# Start every new window at the desktop's usable size without fullscreen.
+maximize = true
+fullscreen = false
+# Keep native window creation off the keyboard; tmux owns tabs and panes.
+keybind = super+n=ignore
+keybind = super+shift+w=ignore
+keybind = super+alt+shift+w=ignore
+macos-dock-drop-behavior = new-window
+
+# Private CSI sequences match User100-User128 in tmux/tmux.conf.
+# Ghostty consumes these shortcuts; tmux handles them before the foreground app.
+keybind = super+d=csi:9001~
+keybind = super+shift+d=csi:9002~
+keybind = super+w=csi:9003~
+keybind = super+[=csi:9004~
+keybind = super+]=csi:9005~
+keybind = super+alt+arrow_up=csi:9006~
+keybind = super+alt+arrow_down=csi:9007~
+keybind = super+alt+arrow_left=csi:9008~
+keybind = super+alt+arrow_right=csi:9009~
+keybind = super+ctrl+arrow_up=csi:9010~
+keybind = super+ctrl+arrow_down=csi:9011~
+keybind = super+ctrl+arrow_left=csi:9012~
+keybind = super+ctrl+arrow_right=csi:9013~
+keybind = super+ctrl+==csi:9014~
+keybind = super+shift+enter=csi:9015~
+
+# Ghostty-style tabs are tmux windows inside the one terminal surface.
+keybind = super+t=csi:9016~
+keybind = super+shift+[=csi:9017~
+keybind = super+shift+]=csi:9018~
+keybind = ctrl+shift+tab=csi:9017~
+keybind = ctrl+tab=csi:9018~
+keybind = super+alt+w=csi:9019~
+keybind = super+1=csi:9021~
+keybind = super+2=csi:9022~
+keybind = super+3=csi:9023~
+keybind = super+4=csi:9024~
+keybind = super+5=csi:9025~
+keybind = super+6=csi:9026~
+keybind = super+7=csi:9027~
+keybind = super+8=csi:9028~
+keybind = super+9=csi:9029~
+# Override the default physical digit aliases as well as the logical digits.
+keybind = super+digit_1=csi:9021~
+keybind = super+digit_2=csi:9022~
+keybind = super+digit_3=csi:9023~
+keybind = super+digit_4=csi:9024~
+keybind = super+digit_5=csi:9025~
+keybind = super+digit_6=csi:9026~
+keybind = super+digit_7=csi:9027~
+keybind = super+digit_8=csi:9028~
+
 # Show or hide existing Ghostty windows from any app.
 keybind = global:f13=toggle_visibility

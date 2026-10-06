@@ -4,13 +4,13 @@ Personal dotfiles managed with git.
 
 ## Setup
 
-Prerequisites: macOS, Xcode CLI tools, Git, Node.js, Fish and uv.
+Prerequisites: macOS, Xcode CLI tools, Git, Node.js, Fish, uv and tmux 3.7+.
 Ghostty uses the separately installed
 PragmataPro Mono Liga font; its licensed font files are not in this repository.
 
 ```sh
 git clone <repo> ~/.config
-make install    # restore scripts, pnpm and Ghostty fonts; apply macOS defaults
+make install    # restore scripts, pnpm, Ghostty fonts and tmux; apply macOS defaults
 ```
 
 Individual targets allow restoring one tool at a time:
@@ -20,6 +20,7 @@ Individual targets allow restoring one tool at a time:
 | `make install-scripts` | Install Git check and SSH signing adapter |
 | `make install-pnpm` | Restore pnpm and pnpx in a stable user directory without Corepack |
 | `make install-ghostty` | Generate/install the four-symbol font for solid tmux arrow indicators |
+| `make install-tmux` | Source the tmux configuration while preserving existing root settings |
 | `make install-macos` | Apply the recorded preferences and restart Dock |
 | `make check` | Run focused script and configuration checks |
 
@@ -90,7 +91,11 @@ built-in keyboard, where Cmd+F11 sends F13 for Ghostty's global show/hide shortc
 
 ## Ghostty
 
-Config at `ghostty/config`.
+Config at `ghostty/config`. Ghostty creates or reattaches the persistent tmux
+`main` session. The tmux configuration provides one top status row with native clickable tabs. See [tmux setup and shortcuts](tmux/README.md).
+Ghostty's pane and tab shortcuts control tmux through dedicated key sequences.
+The default Ctrl+B prefix remains available; see the
+[shortcut list](tmux/shortcuts.md).
 
 `make install-ghostty` creates `~/Library/Fonts/TmuxSolidTriangles.ttf` with
 FontTools (the build dependency is pinned in `Makefile` and managed by uv).
