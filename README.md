@@ -5,11 +5,13 @@ Personal dotfiles managed with git.
 ## Setup
 
 Prerequisites: macOS, Xcode CLI tools, Git, Node.js, Fish, uv and tmux 3.7+.
+For the configured Fish plugins, also install the [CLI dependencies below](#fish-shell).
 Ghostty uses the separately installed
 PragmataPro Mono Liga font; its licensed font files are not in this repository.
 
 ```sh
 git clone <repo> ~/.config
+cd ~/.config
 make install    # restore scripts, pnpm, Ghostty fonts and tmux; apply macOS defaults
 ```
 
@@ -17,12 +19,24 @@ Individual targets allow restoring one tool at a time:
 
 | Target | Effect |
 | --- | --- |
-| `make install-scripts` | Install Git check and SSH signing adapter |
+| `make install-scripts` | Install or update Git check and SSH signing adapter |
 | `make install-pnpm` | Restore pnpm and pnpx in a stable user directory without Corepack |
 | `make install-ghostty` | Generate/install the four-symbol font for solid tmux arrow indicators |
 | `make install-tmux` | Install a missing CodexBar CLI; configure native Claude usage; preserve existing settings |
 | `make install-macos` | Apply the recorded preferences and restart Dock |
 | `make check` | Run focused script and configuration checks |
+
+`make install` already runs `make install-scripts`; no separate script-install
+step is needed after a full installation. The script target copies
+`scripts/git-dirty-check.py` and `scripts/agent-ssh-sign.sh` into `~/.local/bin`
+as `git-dirty-check` and `agent-ssh-sign`. These are installed copies, so pulling
+or editing their source files does not update the installed commands.
+After either script changes, refresh just those commands with:
+
+```sh
+cd ~/.config
+make install-scripts
+```
 
 The pnpm version is pinned in `Makefile`. pnpm respects
 project package-manager versions through its native version switching. CLI
@@ -35,6 +49,15 @@ make clean
 ```
 
 ## Fish Shell
+
+The configured [fzf.fish](https://github.com/PatrickF1/fzf.fish#installation)
+plugin needs `fzf` for searching, `fd` for listing files and `bat` for file
+previews. Install these CLI dependencies separately; neither `make install`
+nor Fisher installs them:
+
+```sh
+brew install fzf fd bat
+```
 
 Plugins are managed by [fisher](https://github.com/jorgebucaran/fisher).
 To restore plugins on a new machine:
