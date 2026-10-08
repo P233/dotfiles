@@ -77,26 +77,26 @@ class QuotaDisplayTests(unittest.TestCase):
                 self.assertEqual(len(visible(usage.render("codex", cache, NOW + 301))), 18)
         self.assertEqual(visible(usage.render("codex", {}, NOW)), "Codex  —        — ")
 
-    def test_fill_boundary_changes_background_but_keeps_percentage_text_white(self):
-        for provider, color in (("codex", "#74aaff"), ("claude", "#d97757")):
+    def test_percentage_text_contrasts_with_each_side_of_the_fill_boundary(self):
+        for provider, color in (("codex", "#a6c8ff"), ("claude", "#ffb890")):
             cache = {"updated_at": NOW, "windows": {
                 "5h": {"remaining": 20, "resets_at": None},
                 "7d": {"remaining": 20, "resets_at": None},
             }}
             with self.subTest(provider=provider):
-                # At 20%, the fill ends inside "20%", but its text stays white.
-                bar = (f"#[nobold,fg=#ffffff,bg={color}] 2"
-                       "#[bg=#44475a]0%      — #[default]")
+                # At 20%, "2" is dark on the fill and "0%" is white on the track.
+                bar = (f"#[nobold,fg=#282a36,bg={color}] 2"
+                       "#[fg=#ffffff,bg=#21222c]0%      — #[default]")
                 expected = f"{provider.title()} {bar}" + (f" {bar}" if provider == "claude" else "")
                 self.assertEqual(usage.render(provider, cache, NOW), expected)
 
-    def test_countdown_text_stays_white_when_fill_ends_inside_it(self):
+    def test_countdown_text_changes_color_when_fill_ends_inside_it(self):
         cache = {"updated_at": NOW, "windows": {
             "5h": {"remaining": 80, "resets_at": NOW + 120},
         }}
         self.assertEqual(usage.render("codex", cache, NOW),
-                         "Codex #[nobold,fg=#ffffff,bg=#74aaff] 80%     2"
-                         "#[bg=#44475a]m #[default]")
+                         "Codex #[nobold,fg=#282a36,bg=#a6c8ff] 80%     2"
+                         "#[fg=#ffffff,bg=#21222c]m #[default]")
 
     def test_cli_renders_both_inline_claude_windows_from_the_shared_cache(self):
         with tempfile.TemporaryDirectory() as directory:

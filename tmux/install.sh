@@ -31,7 +31,7 @@ if [ ! -x "$HOME/.local/bin/codexbar" ]; then
     ln -sf "$directory/CodexBarCLI" "$HOME/.local/bin/codexbar"
 fi
 
-# Keep the external OpenRig block and any other existing settings intact.
+# Keep any existing settings in the external root configuration intact.
 /usr/bin/python3 - <<'PY'
 import json
 import os

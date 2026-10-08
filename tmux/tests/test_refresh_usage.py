@@ -9,7 +9,7 @@ HELPER = Path(__file__).resolve().parents[1] / "scripts/refresh-usage.sh"
 
 
 class ManualRefreshTests(unittest.TestCase):
-    def test_provider_failure_still_waits_for_both_and_repaints(self):
+    def test_provider_failure_still_waits_for_both_without_forcing_status_jobs(self):
         for failing in ("codex", "claude"):
             with self.subTest(failing=failing), tempfile.TemporaryDirectory() as directory:
                 home = Path(directory)
@@ -36,8 +36,9 @@ class ManualRefreshTests(unittest.TestCase):
                     env={**os.environ, "HOME": str(home), "FAILED_PROVIDER": failing,
                          "PATH": str(binaries) + os.pathsep + os.environ["PATH"]})
                 self.assertNotEqual(result.returncode, 0, "provider failures must remain visible")
-                self.assertTrue((home / "repaint").exists(), "a failure skipped the repaint")
-                self.assertEqual((home / "repaint").read_text().strip(), "refresh-client -S")
+                self.assertTrue((home / "codex-finished").exists())
+                self.assertTrue((home / "claude-finished").exists())
+                self.assertFalse((home / "repaint").exists())
 
 
 if __name__ == "__main__":

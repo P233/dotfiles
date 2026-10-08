@@ -1,10 +1,12 @@
 import fcntl
+import json
 import os
 from pathlib import Path
 import pty
 import re
 import shlex
 import shutil
+import signal
 import struct
 import subprocess
 import tempfile
@@ -55,6 +57,9 @@ class ShortcutTerminalTests(unittest.TestCase):
         self.directory = tempfile.TemporaryDirectory(prefix="tmux-shortcuts-")
         self.addCleanup(self.directory.cleanup)
         self.home = Path(self.directory.name).resolve()
+        scripts = self.home / ".config/tmux/scripts"
+        scripts.mkdir(parents=True)
+        shutil.copy2(ROOT / "tmux/scripts/status-jobs.py", scripts / "status-jobs.py")
         self.socket = self.home / "server.sock"
         self.cwd = self.home / "work with 'quotes'"
         self.cwd.mkdir()
@@ -67,6 +72,8 @@ class ShortcutTerminalTests(unittest.TestCase):
                   "-c", str(self.cwd), "-x", "180", "-y", "50", "/bin/sh")
         self.tmux("set-option", "-g", "default-shell", "/bin/sh")
         self.tmux("set-option", "-g", "status-right", "")
+        self.tmux("set-hook", "-g", "client-session-changed[151]",
+                  "set-option -g @test-status-ready yes")
         self.master, slave = pty.openpty()
         try:
             fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", 50, 180, 0, 0))
@@ -81,6 +88,9 @@ class ShortcutTerminalTests(unittest.TestCase):
         self.output = b""
         self.wait_for(lambda: self.tmux("list-clients", "-F", "#{client_session}").strip()
                       == "shortcuts")
+        self.wait_for(lambda: self.tmux("show-option", "-gqv", "@test-status-ready").strip()
+                      == "yes")
+        self.tmux("set-hook", "-gu", "client-session-changed[151]")
         self.sequences = shortcut_sequences()
 
     def stop_server(self):
@@ -138,6 +148,134 @@ class ShortcutTerminalTests(unittest.TestCase):
 
     def windows(self):
         return self.tmux("list-windows", "-t", "shortcuts", "-F", "#{window_id}").splitlines()
+
+    def prepare_status_widgets(self, trace=False):
+        scripts = self.home / ".config/tmux/scripts"
+        scripts.mkdir(parents=True, exist_ok=True)
+        for name in ("usage.py", "focus.py", "cpu.sh", "ram.sh"):
+            shutil.copy2(ROOT / "tmux/scripts" / name, scripts / name)
+            if trace:
+                script = scripts / name
+                real = scripts / (name + ".real")
+                script.rename(real)
+                script.write_text(f'#!/bin/sh\nprintf "%s %s\\n" {shlex.quote(name)} "$$" '
+                                  f'>> "$HOME/status-starts"\nexec {shlex.quote(str(real))} "$@"\n')
+                script.chmod(0o755)
+        cache = self.home / "cache/tmux-usage"
+        cache.mkdir(parents=True)
+        now = int(time.time())
+        data = {"attempted_at": now, "updated_at": now, "windows": {
+            "5h": {"remaining": 50, "resets_at": now + 3600},
+            "7d": {"remaining": 75, "resets_at": now + 86400},
+        }}
+        (cache / "codex.json").write_text(json.dumps({**data, "credits": 850}))
+        (cache / "claude.json").write_text(json.dumps(data))
+        self.tmux("set-environment", "-g", "XDG_CACHE_HOME", str(cache.parent))
+        binary = self.home / "bin/open"
+        binary.parent.mkdir()
+        binary.write_text('#!/bin/sh\nprintf "%s\\n" "$@" >> "$HOME/opened-urls"\n')
+        binary.chmod(0o755)
+        self.tmux("set-environment", "-g", "PATH", f"{binary.parent}:{os.environ['PATH']}")
+        self.tmux("source-file", str(CONFIG))
+        self.wait_for(lambda: b"Codex" in self.output and b"Claude" in self.output
+                      and b"Focus" in self.output)
+
+    def click_status(self, column):
+        self.send(f"\x1b[<0;{column};1M")
+        self.send(f"\x1b[<0;{column};1m")
+
+    def test_redraw_and_timer_reset_do_not_restart_collectors_and_detach_stops_jobs(self):
+        self.prepare_status_widgets(trace=True)
+        starts = self.home / "status-starts"
+        self.wait_for(lambda: len(starts.read_text().splitlines()) == 4)
+        initial = starts.read_text().splitlines()
+        self.output = b""
+        for _ in range(4):
+            self.tmux("rename-window", str(time.time()))
+            time.sleep(1.05)
+            self.drain()
+        self.assertEqual(starts.read_text().splitlines(), initial)
+        self.tmux("focus-restart")
+        self.wait_for(lambda: len(starts.read_text().splitlines()) == 5)
+        self.assertTrue(starts.read_text().splitlines()[-1].startswith("focus.py "))
+        pids = [int(line.split()[1]) for line in starts.read_text().splitlines()]
+        self.tmux("detach-client")
+
+        def all_stopped():
+            for pid in pids:
+                try:
+                    os.kill(pid, 0)
+                except ProcessLookupError:
+                    continue
+                return False
+            return True
+
+        self.wait_for(all_stopped)
+
+    def test_status_widget_clicks_open_exact_urls_after_resizing(self):
+        self.prepare_status_widgets()
+        opened = self.home / "opened-urls"
+        expected = []
+        for width in (180, 100):
+            with self.subTest(width=width):
+                fcntl.ioctl(self.master, termios.TIOCSWINSZ, struct.pack("HHHH", 50, width, 0, 0))
+                self.client.send_signal(signal.SIGWINCH)
+                self.wait_for(lambda: self.tmux("list-clients", "-F", "#{client_width}").strip()
+                              == str(width))
+                # Right-aligned: timer 18, Claude 32, Codex 22 (including credits), separators 3.
+                claude = width - 18 - 3 - 32 + 1
+                codex = claude - 3 - 22
+                for column, url in (
+                        (codex, "https://chatgpt.com/settings/usage?tab=overview"),
+                        (codex + 6, "https://chatgpt.com/settings/usage?tab=overview"),
+                        (codex + 21, "https://chatgpt.com/settings/usage?tab=overview"),
+                        (claude, "https://claude.ai/new#settings/usage"),
+                        (claude + 7, "https://claude.ai/new#settings/usage"),
+                        (claude + 31, "https://claude.ai/new#settings/usage")):
+                    self.click_status(column)
+                    expected.append(url)
+                    self.wait_for(lambda: opened.exists() and opened.read_text().splitlines() == expected)
+                    time.sleep(0.35)
+                # Separator clicks do not inherit the preceding widget's action.
+                self.click_status(claude - 2)
+                self.click_status(width - 19)
+                time.sleep(0.35)
+                self.assertEqual(opened.read_text().splitlines(), expected)
+
+    def test_timer_restarts_on_single_click_and_tabs_still_select_windows(self):
+        self.prepare_status_widgets()
+        for column in (163, 180):
+            with self.subTest(column=column):
+                old = int(time.time()) - 3200
+                self.tmux("set-option", "-g", "@focus-started-at", str(old))
+                self.wait_for(lambda: b"Break" in self.output)
+                before = int(time.time())
+                self.click_status(column)
+                self.wait_for(lambda: int(self.tmux("show-option", "-gv", "@focus-started-at")) >= before)
+                self.wait_for(lambda: b"Focus" in self.output)
+                self.assertFalse((self.home / "opened-urls").exists())
+                time.sleep(0.4)
+        self.tmux("new-window", "-t", "shortcuts", "/bin/sh")
+        self.click_status(2)
+        self.wait_for(lambda: self.value("#{window_index}") == "1")
+
+    def test_failed_focus_reminder_reports_details_without_entering_view_mode(self):
+        self.prepare_status_widgets()
+        binary = self.home / "bin/osascript"
+        binary.write_text('#!/bin/sh\necho called >> "$HOME/reminder-calls"\n'
+                          'echo native-reminder-fixture-error >&2\nexit 7\n')
+        binary.chmod(0o755)
+        self.output = b""
+        self.tmux("set-option", "-g", "@focus-started-at", str(int(time.time()) - 3060))
+        error_log = self.home / "cache/tmux-focus/reminder-error.log"
+        self.wait_for(error_log.exists)
+        self.wait_for(lambda: b"Focus reminder failed" in self.output)
+        self.assertIn("native-reminder-fixture-error", error_log.read_text())
+        self.assertEqual(self.value("#{pane_in_mode}"), "0")
+        for _ in range(2):
+            self.tmux("refresh-client", "-S")
+            time.sleep(0.1)
+        self.assertEqual((self.home / "reminder-calls").read_text().splitlines(), ["called"])
 
     def test_splits_inherit_directory_and_pane_navigation_reaches_neighbors(self):
         left = self.value("#{pane_id}")
@@ -218,6 +356,28 @@ class ShortcutTerminalTests(unittest.TestCase):
         self.assertNotIn(target, self.panes())
         self.assertIn(other, self.panes())
 
+    def test_closing_a_tab_renumbers_digit_shortcuts_without_changing_windows(self):
+        self.press("super+t")
+        second = self.value("#{window_id}")
+        self.press("super+t")
+        third = self.value("#{window_id}")
+        panes = self.tmux("list-panes", "-t", third, "-F", "#{pane_id}:#{pane_pid}")
+        self.press("super+1")
+        self.press("super+alt+w")
+        self.wait_for(lambda: b"Close tab" in self.output)
+        self.tmux("select-window", "-t", third)
+        self.send("y")
+        self.wait_for(lambda: self.windows() == [second, third])
+        self.assertEqual(self.tmux("list-windows", "-t", "shortcuts", "-F",
+                                   "#{window_index}").splitlines(), ["1", "2"])
+        self.assertEqual(self.value("#{window_id}"), third)
+        self.assertEqual(self.tmux("list-panes", "-t", third, "-F", "#{pane_id}:#{pane_pid}"), panes)
+        for trigger, window in (("super+1", second), ("super+2", third), ("super+9", third)):
+            self.press(trigger)
+            self.wait_for(lambda: self.value("#{window_id}") == window)
+        self.press("super+t")
+        self.wait_for(lambda: self.value("#{window_index}") == "3")
+
     def test_tab_close_keeps_its_original_target_after_switching_tabs(self):
         self.press("super+t")
         self.press("super+d")
@@ -257,7 +417,7 @@ class ShortcutTerminalTests(unittest.TestCase):
 
     def test_usage_refresh_requires_prefix_and_dispatches_without_arguments(self):
         helper = self.home / ".config/tmux/scripts/refresh-usage.sh"
-        helper.parent.mkdir(parents=True)
+        helper.parent.mkdir(parents=True, exist_ok=True)
         helper.write_text('#!/bin/sh\nprintf "%s\\n" "$#" > "$HOME/usage-refresh"\n')
         helper.chmod(0o755)
         ready = self.home / "ready"

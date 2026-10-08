@@ -40,12 +40,12 @@ class TmuxInstallTests(unittest.TestCase):
         self.install()
         self.assertEqual(config.read_text().count("source-file"), 1)
 
-    def test_reload_setup_preserves_existing_openrig_config_and_file_mode(self):
+    def test_reload_setup_preserves_existing_local_config_and_file_mode(self):
         config = self.home / ".tmux.conf"
-        config.write_text("# OpenRig managed block\nset -g history-limit 50000\n")
+        config.write_text("# Local settings\nset -g history-limit 50000\n")
         config.chmod(0o640)
         self.install()
-        self.assertTrue(config.read_text().startswith("# OpenRig managed block\nset -g history-limit 50000\n"))
+        self.assertTrue(config.read_text().startswith("# Local settings\nset -g history-limit 50000\n"))
         self.assertEqual(config.stat().st_mode & 0o777, 0o640)
         first = config.read_bytes()
         self.install()

@@ -102,7 +102,7 @@ class UsageUpdateTests(unittest.TestCase):
         self.assertEqual(summary(usage.render("claude", cache, NOW + 3600)),
                          "Claude 63%~ 1h 79%~ 23h")
 
-    def test_manual_helper_refreshes_both_providers_before_repainting(self):
+    def test_manual_helper_refreshes_both_providers_without_restarting_status_jobs(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             scripts = root / ".config/tmux/scripts"
@@ -110,7 +110,7 @@ class UsageUpdateTests(unittest.TestCase):
             (scripts / "usage.py").write_bytes(SCRIPT.read_bytes())
             binary = root / ".local/bin/codexbar"
             binary.parent.mkdir(parents=True)
-            # The background Codex query finishes last, so an early repaint is observable.
+            # The background Codex query finishes last; the helper must wait for it.
             binary.write_text("#!/usr/bin/python3\nimport json,sys,datetime,time\n"
                               "provider=sys.argv[sys.argv.index('--provider')+1]\n"
                               "time.sleep(0.3 if provider == 'codex' else 0)\n"
@@ -122,7 +122,7 @@ class UsageUpdateTests(unittest.TestCase):
             bin_dir = root / "bin"
             bin_dir.mkdir()
             tmux = bin_dir / "tmux"
-            # The repaint must observe both refreshed caches, not the seeded ones.
+            # A forced repaint would interrupt the persistent status producers.
             tmux.write_text('#!/bin/sh\nset -e\n'
                             'grep -q \'"remaining": 77\' "$XDG_CACHE_HOME/tmux-usage/codex.json"\n'
                             'grep -q \'"remaining": 77\' "$XDG_CACHE_HOME/tmux-usage/claude.json"\n'
@@ -142,7 +142,7 @@ class UsageUpdateTests(unittest.TestCase):
             for provider in ("codex", "claude"):
                 self.assertEqual(usage.read_cache(cache_dir / f"{provider}.json")
                                  ["windows"]["5h"]["remaining"], 77)
-            self.assertEqual((root / "repaint").read_text().strip(), "refresh-client -S")
+            self.assertFalse((root / "repaint").exists())
 
     def test_native_ingest_sanitizes_data_and_does_not_query(self):
         with tempfile.TemporaryDirectory() as directory:

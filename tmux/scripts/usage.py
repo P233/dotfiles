@@ -30,7 +30,7 @@ MAX_EPOCH = 1e12
 MAX_CREDITS = 1e9
 # Manual Claude results carry reset times read from the CLI's rounded display.
 SAME_PERIOD_SECONDS = 3600
-COLORS = {"codex": "#74aaff", "claude": "#d97757"}
+COLORS = {"codex": "#a6c8ff", "claude": "#ffb890"}
 # PragmataPro Mono Liga's native one-cell Nerd refresh glyph.
 RESET_ICON = "\uf021"
 
@@ -177,10 +177,10 @@ def render(provider, cache, now):
             else:
                 countdown = f"{minutes}m"
         text = f" {percentage}".ljust(BAR_WIDTH - len(countdown) - 1) + countdown + " "
-        # Both text fields keep their white foreground across the fill boundary.
+        # Bright fills need dark text; the unfilled track keeps white text.
         color = COLORS[provider]
-        return (f'#[nobold,fg=#ffffff,bg={color}]{text[:filled]}'
-                f'#[bg=#44475a]{text[filled:]}#[default]')
+        return (f'#[nobold,fg=#282a36,bg={color}]{text[:filled]}'
+                f'#[fg=#ffffff,bg=#21222c]{text[filled:]}#[default]')
 
     if provider == "claude":
         bars = f'{progress("5h")} {progress("7d")}'
@@ -314,6 +314,7 @@ def refresh(provider, path, force=False):
         with locked_cache(path) as cache:
             if not force and not should_refresh(provider, cache, now):
                 return cache, None
+            previous_attempt = cache.get("attempted_at", 0)
             cache["attempted_at"] = now
             write_cache(path, cache)
         error_name = None
@@ -322,6 +323,12 @@ def refresh(provider, path, force=False):
         except (OSError, ValueError, subprocess.TimeoutExpired) as error:
             # Persist no account identities, credentials, raw output, or provider messages.
             error_name = type(error).__name__
+        except SystemExit:
+            # A stopped status producer cancelled this query; its replacement may retry now.
+            with locked_cache(path) as latest:
+                latest["attempted_at"] = previous_attempt
+                write_cache(path, latest)
+            raise
         with locked_cache(path) as latest:
             if error_name:
                 # A native update arriving during a failed query remains valid.
@@ -346,16 +353,75 @@ def refresh(provider, path, force=False):
             return latest, None
 
 
+def watch():
+    """Publish both quotas; a separate query process cannot stall native updates."""
+    owner = os.getppid()
+    probe = None
+    next_probe = 0
+    previous_line = None
+
+    def interrupted(signum, _frame):
+        raise SystemExit(128 + signum)
+
+    signals = (signal.SIGTERM, signal.SIGHUP, signal.SIGINT)
+    previous_handlers = {sig: signal.signal(sig, interrupted) for sig in signals}
+    try:
+        while True:
+            # A quiet output pipe cannot reveal that the owning tmux server died.
+            if owner == 1 or os.getppid() != owner:
+                break
+            now = time.time()
+            caches = {provider: read_cache(CACHE_DIR / f"{provider}.json")
+                      for provider in SOURCES}
+            # tmux.conf binds MouseDown1Control1/2 to these ranges.
+            line = (f'#[range=control|1,fg={COLORS["codex"]}]'
+                    f'{render("codex", caches["codex"], now)}#[norange] '
+                    f'#[fg=#b0b0bd]| #[range=control|2,fg={COLORS["claude"]}]'
+                    f'{render("claude", caches["claude"], now)}#[norange]')
+            if line != previous_line:
+                print(line, flush=True)
+                previous_line = line
+            if probe is not None and probe.poll() is not None:
+                probe = None
+            if (probe is None and now >= next_probe
+                    and should_refresh("codex", caches["codex"], now)):
+                # Keep the CLI's existing cache locks, timeout and signal cleanup.
+                # The local bound also prevents a failed child startup from spinning.
+                next_probe = now + REFRESH_SECONDS
+                probe = subprocess.Popen([sys.executable, str(Path(__file__).resolve()), "codex"],
+                                         stdout=subprocess.DEVNULL)
+            time.sleep(1)
+    finally:
+        if probe is not None and probe.poll() is None:
+            probe.terminate()
+            try:
+                probe.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                probe.kill()
+                probe.wait()
+        for sig, handler in previous_handlers.items():
+            signal.signal(sig, handler)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("provider", choices=("codex", "claude"))
+    parser.add_argument("provider", nargs="?", choices=("codex", "claude"))
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--refresh", action="store_true", help="query now, ignoring the polling interval")
     mode.add_argument("--ingest", action="store_true", help="silently receive Claude statusLine JSON from stdin")
+    mode.add_argument("--watch", action="store_true", help="continuously publish both quota widgets")
     args = parser.parse_args()
+    if args.watch and args.provider is not None:
+        parser.error("--watch publishes both providers; do not specify one")
+    if not args.watch and args.provider is None:
+        parser.error("a provider is required")
     if args.ingest and args.provider != "claude":
         parser.error("--ingest is only available for Claude")
     os.umask(0o077)
+    if args.watch:
+        CACHE_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
+        watch()
+        return
     path = CACHE_DIR / f"{args.provider}.json"
     if args.ingest:
         try:
