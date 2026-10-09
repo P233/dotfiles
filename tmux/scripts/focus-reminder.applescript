@@ -5,7 +5,7 @@ on run arguments
 	set applicationInstance to current application's NSApplication's sharedApplication()
 	applicationInstance's setActivationPolicy:(current application's NSApplicationActivationPolicyAccessory)
 	set panelWidth to 280
-	set panelHeight to 80
+	set panelHeight to 74
 	set panelBounds to current application's NSMakeRect(0, 0, panelWidth, panelHeight)
 	set panel to current application's NSPanel's alloc()'s initWithContentRect:panelBounds styleMask:(current application's NSWindowStyleMaskNonactivatingPanel) backing:(current application's NSBackingStoreBuffered) defer:false
 	panel's setTitle:"Focus reminder"
@@ -22,13 +22,17 @@ on run arguments
 	backdrop's setMaterial:(current application's NSVisualEffectMaterialHUDWindow)
 	backdrop's setBlendingMode:(current application's NSVisualEffectBlendingModeBehindWindow)
 	backdrop's setState:(current application's NSVisualEffectStateActive)
-	backdrop's setWantsLayer:true
-	backdrop's layer()'s setCornerRadius:18
-	backdrop's layer()'s setMasksToBounds:true
+	-- Behind-window material needs its own mask; layer clipping leaves square corners.
+	set roundedMask to current application's NSImage's alloc()'s initWithSize:(current application's NSMakeSize(panelWidth, panelHeight))
+	roundedMask's lockFocus()
+	current application's NSColor's blackColor()'s setFill()
+	(current application's NSBezierPath's bezierPathWithRoundedRect:panelBounds xRadius:18 yRadius:18)'s fill()
+	roundedMask's unlockFocus()
+	backdrop's setMaskImage:roundedMask
 	set label to current application's NSTextField's labelWithString:"1 minute remaining"
 	label's setFont:(current application's NSFont's systemFontOfSize:22 weight:(current application's NSFontWeightMedium))
 	label's setAlignment:(current application's NSTextAlignmentCenter)
-	label's setFrame:(current application's NSMakeRect(20, 24, panelWidth - 40, 32))
+	label's setFrame:(current application's NSMakeRect(20, 18, panelWidth - 40, 32))
 	backdrop's addSubview:label
 	panel's setContentView:backdrop
 

@@ -34,6 +34,40 @@ class FocusDisplayTests(unittest.TestCase):
                            timeout=10)
 
     @unittest.skipUnless(shutil.which("osascript"), "AppleScript runner is not installed")
+    def test_native_reminder_material_mask_has_transparent_corners(self):
+        # Probe the actual AppKit material mask before the helper displays its panel.
+        # A CALayer corner radius alone does not clip behind-window material.
+        source = REMINDER.read_text()
+        anchor = "\tset earliest to (item 1 of arguments) as real"
+        self.assertIn(anchor, source)
+        probe = '''
+        panel's setAppearance:(current application's NSAppearance's appearanceNamed:(item 3 of arguments))
+        set materialMask to backdrop's maskImage()
+        if materialMask is missing value then error "Material has no transparency mask"
+        set bitmap to current application's NSBitmapImageRep's imageRepWithData:(materialMask's TIFFRepresentation())
+        set maxX to (bitmap's pixelsWide() as integer) - 1
+        set maxY to (bitmap's pixelsHigh() as integer) - 1
+        set midX to maxX div 2
+        set midY to maxY div 2
+        repeat with samplePoint in {{0, 0}, {maxX, 0}, {0, maxY}, {maxX, maxY}}
+            set pixelColor to bitmap's colorAtX:(item 1 of samplePoint) y:(item 2 of samplePoint)
+            if (pixelColor's alphaComponent() as real) > 0.01 then error "Material corner is not transparent"
+        end repeat
+        repeat with samplePoint in {{midX, midY}, {midX, 0}, {midX, maxY}, {0, midY}, {maxX, midY}}
+            set pixelColor to bitmap's colorAtX:(item 1 of samplePoint) y:(item 2 of samplePoint)
+            if (pixelColor's alphaComponent() as real) < 0.99 then error "Material body is clipped"
+        end repeat
+        '''
+        with tempfile.TemporaryDirectory(prefix="tmux-reminder-mask-") as directory:
+            script = Path(directory) / "probe.applescript"
+            script.write_text(source.replace(anchor, probe + anchor))
+            for appearance in ("NSAppearanceNameAqua", "NSAppearanceNameDarkAqua"):
+                with self.subTest(appearance=appearance):
+                    result = subprocess.run(["osascript", str(script), "0", "1", appearance],
+                                            capture_output=True, text=True, timeout=10)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+
+    @unittest.skipUnless(shutil.which("osascript"), "AppleScript runner is not installed")
     def test_native_reminder_skips_a_late_deadline_without_waiting_five_seconds(self):
         now = int(time.time())
         subprocess.run(["osascript", str(REMINDER), str(now - 55), str(now - 50)],

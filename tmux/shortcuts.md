@@ -37,6 +37,7 @@ Ghostty 负责一个终端窗口，tmux 管理内部的 tabs 和面板。
 | 快捷键 | 操作 |
 | --- | --- |
 | ⌘C / ⌘V | Ghostty 复制 / 粘贴 |
+| ⌘⇧点击 URL | 用默认浏览器打开链接；Shift 临时绕过 tmux 的鼠标接管 |
 | ⌘+ / ⌘− / ⌘0 | 调整 / 恢复终端字号 |
 | ⌘Enter 或 ⌘⌃F | 切换 Ghostty 全屏 |
 | ⌘⇧, | 重载 Ghostty 配置 |
@@ -48,6 +49,9 @@ Ghostty 负责一个终端窗口，tmux 管理内部的 tabs 和面板。
 
 关闭面板会结束其中的 shell、Codex 或 Claude。确认提示中按 `y` 关闭，
 按 `n` 或 Escape 取消。只想隐藏界面时用 F13。
+
+URL 点击由 Ghostty 内置处理，无需 tmux 插件。当前开启了 tmux 鼠标功能，
+因此需要同时按住 ⌘ 和 Shift；没有鼠标接管时，Ghostty 使用 ⌘点击。
 
 关闭一个 tab 的最后面板会关闭该 tab；关闭会话的最后 tab 会结束 tmux
 会话，Ghostty 终端也可能随之关闭。Ctrl+D 的含义取决于前台程序，不能代替关闭面板。

@@ -22,6 +22,10 @@ area. CPU and RAM are separated by ` · `. The clock is hidden.
 Closing a tab renumbers the remaining tabs from 1, so Cmd+1 through Cmd+8 follow
 their visible order.
 
+Ghostty opens visible URLs with **Cmd+Shift+click** while tmux mouse mode is on.
+Shift temporarily bypasses mouse capture; Cmd activates Ghostty's built-in URL
+matching. No tmux URL plugin is required.
+
 Codex uses light blue (`#a6c8ff`); Claude uses light orange (`#ffb890`).
 Twelve-cell bars mean **remaining quota**, so a longer colored fill means more
 quota available. Percentages sit inside each bar at the left, with one cell of
@@ -98,6 +102,8 @@ During the last 60 seconds of Focus, its label and remaining time turn yellow
 overlay saying **1 minute remaining**. It disappears after five seconds, has no
 buttons, lets clicks pass through, and does not take keyboard focus. The AppKit
 helper runs in the background without blocking tmux or requiring extra packages.
+Its rounded mask clips the behind-window material as well as its tint, keeping
+the corners transparent in both light and dark appearances.
 Break remains gray and does not show a reminder. tmux keeps one shared reminder
 attempt marker per server, so concurrent clients and configuration reloads do not
 repeat it; restarting the timer begins a new reminder cycle. Reminders require
