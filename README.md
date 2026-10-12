@@ -12,15 +12,19 @@ PragmataPro Mono Liga font; its licensed font files are not in this repository.
 ```sh
 git clone <repo> ~/.config
 cd ~/.config
+npm config set 'allow-scripts=core-js,@openrig/cli,pnpm' --location=user
 make install    # restore scripts, pnpm, Ghostty fonts and tmux; apply macOS defaults
 ```
+
+The npm command restores the reviewed install-script policy in `~/.npmrc`;
+other user settings stay intact. The full user configuration is not tracked here.
 
 Individual targets allow restoring one tool at a time:
 
 | Target | Effect |
 | --- | --- |
 | `make install-scripts` | Install or update Git check and SSH signing adapter |
-| `make install-pnpm` | Restore pnpm and pnpx in a stable user directory without Corepack |
+| `make install-pnpm` | Restore pnpm and pnpx through npm's global installation |
 | `make install-ghostty` | Generate/install the four-symbol font for solid tmux arrow indicators |
 | `make install-tmux` | Install a missing CodexBar CLI; configure native Claude usage; preserve existing settings |
 | `make install-macos` | Apply the recorded preferences and restart Dock |
@@ -38,9 +42,29 @@ cd ~/.config
 make install-scripts
 ```
 
-The pnpm version is pinned in `Makefile`. pnpm respects
-project package-manager versions through its native version switching. CLI
-downloads and generated packages live outside the configuration source.
+Node and its bundled npm are managed by Homebrew. Global CLI tools, including
+pnpm itself, are managed by npm; use `npm upgrade -g` to update them. The pnpm
+restore version is pinned in `Makefile`, so `make install-pnpm` reinstalls that
+version. Project dependencies stay with pnpm, which respects each project's
+`packageManager` version through native version switching. CLI downloads and
+generated packages live outside the configuration source.
+
+Restore the other global CLI tools separately:
+
+```sh
+npm install --global \
+  @openai/codex@0.162.1 \
+  @openrig/cli@0.6.9 \
+  @wallabyjs/cli@1.0.28 \
+  prettier@3.9.10 \
+  typescript-language-server@6.0.2 \
+  typescript@7.0.2 \
+  vscode-langservers-extracted@4.10.0
+```
+
+These are the recorded restore versions; update this list when adopting newer
+global tools. pnpm's restore version remains in `Makefile`. npm itself stays
+with Homebrew's Node installation, and ACP adapters are not part of this setup.
 
 To remove the Git check binary (the signing adapter is retained):
 
@@ -81,8 +105,10 @@ fisher update
 Add each hand-written function explicitly to the `.gitignore` allowlist.
 PATH entries use `fish_add_path --path`; sourcing the config repeatedly does
 not append duplicate paths or persist new universal variables. `~/.local/bin`
-contains the pnpm and CodexBar CLI entry points; `~/Library/pnpm` contains the
-existing global ACP commands.
+contains user scripts and the CodexBar CLI entry point. npm's global CLI entry
+points live in its configured prefix's `bin` directory (`/opt/homebrew/bin` on
+this machine). `~/Library/pnpm` retains pnpm's package-manager versions and store;
+it is not used for global CLI installations.
 
 ## Git
 
